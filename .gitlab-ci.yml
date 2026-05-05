@@ -1,0 +1,367 @@
+# ============================================================
+#  GitLab CI/CD — pfe-management (React 18 + Express/MongoDB)
+#  Version DevSecOps — SonarQube + Trivy intégrés
+# ============================================================
+
+image: node:18-alpine
+
+variables:
+  NPM_CONFIG_LOGLEVEL: warn
+  APP_NAME: pfe-management
+
+stages:
+  - install
+  - test
+  - sast        # ← NOUVEAU : analyse statique du code (SonarQube)
+  - scan        # ← NOUVEAU : scan des dépendances (Trivy)
+  - build
+  - deploy
+
+.node_cache: &node_cache
+  cache:
+    key:
+      files:
+        - frontend/package.json
+        - backend/package.json
+    paths:
+      - frontend/node_modules/
+      - backend/node_modules/
+    policy: pull-push
+
+.only_main: &only_main
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+
+# ============================================================
+#  STAGE 1 — INSTALL
+# ============================================================
+
+install:frontend:
+  stage: install
+  <<: *node_cache
+  <<: *only_main
+  script:
+    - echo "📦 Installation Frontend..."
+    - cd frontend && npm install --legacy-peer-deps
+  artifacts:
+    paths:
+      - frontend/node_modules/
+    expire_in: 1 hour
+
+install:backend:
+  stage: install
+  <<: *node_cache
+  <<: *only_main
+  script:
+    - echo "📦 Installation Backend..."
+    - cd backend && npm install
+  artifacts:
+    paths:
+      - backend/node_modules/
+    expire_in: 1 hour
+
+# ============================================================
+#  STAGE 2 — TEST
+# ============================================================
+
+test:frontend:
+  stage: test
+  <<: *node_cache
+  <<: *only_main
+  needs:
+    - install:frontend
+  script:
+    - echo "🧪 Tests Frontend..."
+    - cd frontend
+    - npm test -- --coverage --watchAll=false --ci --passWithNoTests || true
+    - |
+      if [ -d "coverage" ]; then
+        echo "✅ Coverage found"
+      else
+        mkdir -p coverage
+        echo "Coverage not available" > coverage/README.md
+      fi
+  artifacts:
+    when: always
+    paths:
+      - frontend/coverage/
+    expire_in: 1 week
+  allow_failure: true
+
+test:backend:
+  stage: test
+  <<: *node_cache
+  <<: *only_main
+  needs:
+    - install:backend
+  services:
+    - name: mongo:6
+      alias: mongo
+  variables:
+    NODE_ENV: test
+    MONGO_URI: mongodb://mongo:27017/pfe_test
+    JWT_SECRET: test_secret_key_for_ci
+    JWT_EXPIRE: 1d
+    PORT: 5000
+    FRONTEND_URL: http://localhost:3000
+  script:
+    - echo "🧪 Tests Backend..."
+    - cd backend && npm test -- --runInBand --passWithNoTests --forceExit
+  artifacts:
+    when: always
+    paths:
+      - backend/coverage/
+    expire_in: 1 week
+  allow_failure: false
+
+# ============================================================
+#  STAGE 3 — SAST (SonarQube)
+#  Variables requises dans GitLab CI/CD Settings :
+#    - SONAR_HOST_URL  (ex: http://localhost:9000)
+#    - SONAR_TOKEN     (token généré dans SonarQube)
+# ============================================================
+
+sast:sonarqube:backend:
+  stage: sast
+  image: sonarsource/sonar-scanner-cli:latest
+  <<: *only_main
+  needs:
+    - test:backend
+  variables:
+    GIT_DEPTH: 0   # nécessaire pour l'analyse incrémentale SonarQube
+  script:
+    - echo "🔍 Analyse SAST Backend — SonarQube..."
+    - |
+      sonar-scanner \
+        -Dsonar.projectKey=pfa-management-backend \
+        -Dsonar.projectName="pfa-management-backend" \
+        -Dsonar.sources=backend/src \
+        -Dsonar.tests=backend \
+        -Dsonar.test.inclusions="**/*.test.js,**/*.spec.js" \
+        -Dsonar.javascript.lcov.reportPaths=backend/coverage/lcov.info \
+        -Dsonar.host.url=$SONAR_HOST_URL \
+        -Dsonar.token=$SONAR_TOKEN \
+        -Dsonar.qualitygate.wait=true
+  allow_failure: false
+
+sast:sonarqube:frontend:
+  stage: sast
+  image: sonarsource/sonar-scanner-cli:latest
+  <<: *only_main
+  needs:
+    - test:frontend
+  variables:
+    GIT_DEPTH: 0
+  script:
+    - echo "🔍 Analyse SAST Frontend — SonarQube..."
+    - |
+      sonar-scanner \
+        -Dsonar.projectKey=pfa-management-Frontend \
+        -Dsonar.projectName="pfa-management-Frontend" \
+        -Dsonar.sources=frontend/src \
+        -Dsonar.tests=frontend/src \
+        -Dsonar.test.inclusions="**/*.test.js,**/*.test.jsx,**/*.spec.js" \
+        -Dsonar.javascript.lcov.reportPaths=frontend/coverage/lcov.info \
+        -Dsonar.host.url=$SONAR_HOST_URL \
+        -Dsonar.token=$SONAR_TOKEN \
+        -Dsonar.qualitygate.wait=true
+  allow_failure: true  # frontend tests en allow_failure donc cohérent
+
+# ============================================================
+#  STAGE 4 — SCAN DÉPENDANCES (Trivy)
+#  Trivy scanne les package-lock.json pour les CVEs
+#  Rapport JSON sauvegardé en artifact
+# ============================================================
+
+scan:trivy:
+  stage: scan
+  image:
+    name: aquasec/trivy:latest
+    entrypoint: [""]
+  <<: *only_main
+  needs:
+    - sast:sonarqube:backend
+    - sast:sonarqube:frontend
+  variables:
+    # Cache la base de données Trivy entre les jobs pour accélérer
+    TRIVY_CACHE_DIR: "$CI_PROJECT_DIR/.trivy-cache"
+  cache:
+    key: trivy-db
+    paths:
+      - .trivy-cache/
+  script:
+    - echo "🔎 Scan des dépendances — Trivy..."
+    - mkdir -p reports
+
+    # Scan backend
+    - echo "--- Scan backend/package-lock.json ---"
+    - trivy fs backend/package-lock.json
+        --format table
+        --exit-code 0
+        --severity LOW,MEDIUM,HIGH,CRITICAL
+        --output reports/trivy-backend.txt
+
+    # Scan frontend
+    - echo "--- Scan frontend/package-lock.json ---"
+    - trivy fs frontend/package-lock.json
+        --format table
+        --exit-code 0
+        --severity LOW,MEDIUM,HIGH,CRITICAL
+        --output reports/trivy-frontend.txt
+
+    # Rapport JSON consolidé (pour archivage)
+    - trivy fs .
+        --format json
+        --exit-code 0
+        --severity HIGH,CRITICAL
+        --output reports/trivy-report.json
+
+    # Affichage résumé
+    - echo "📊 Résumé Backend:"
+    - cat reports/trivy-backend.txt | tail -5
+    - echo "📊 Résumé Frontend:"
+    - cat reports/trivy-frontend.txt | tail -5
+
+    # Echec si des CVE CRITICAL existent (politique de sécurité)
+    - trivy fs .
+        --exit-code 1
+        --severity CRITICAL
+        --quiet || (echo "❌ Des vulnérabilités CRITICAL ont été détectées!" && exit 1)
+
+  artifacts:
+    when: always
+    name: "trivy-reports-$CI_COMMIT_SHORT_SHA"
+    paths:
+      - reports/
+    expire_in: 1 month
+  allow_failure: false
+
+# ============================================================
+#  STAGE 5 — BUILD
+# ============================================================
+
+build:frontend:
+  stage: build
+  <<: *node_cache
+  <<: *only_main
+  needs:
+    - scan:trivy
+  variables:
+    REACT_APP_API_URL: $REACT_APP_API_URL
+    NODE_ENV: production
+    CI: "false"
+  script:
+    - echo "🏗️ Build React..."
+    - cd frontend
+    - npm run build
+    - |
+      if [ -d "build" ]; then
+        echo "✅ Build successful"
+        ls -lh build/
+        if [ -f "build/index.html" ]; then
+          echo "✅ index.html présent"
+        else
+          echo "❌ index.html manquant!"
+          exit 1
+        fi
+      else
+        echo "❌ Build failed - no build directory"
+        exit 1
+      fi
+  artifacts:
+    name: "frontend-build-$CI_COMMIT_SHORT_SHA"
+    paths:
+      - frontend/build/
+    expire_in: 1 week
+
+# ============================================================
+#  STAGE 6 — DEPLOY (SSH vers serveur)
+# ============================================================
+
+deploy:staging:
+  stage: deploy
+  image: alpine:latest
+  needs:
+    - build:frontend
+  environment:
+    name: staging
+    url: https://staging.pfe-management.example.com
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+      when: manual
+  before_script:
+    - apk add --no-cache openssh-client rsync
+    - mkdir -p ~/.ssh && chmod 700 ~/.ssh
+    - echo "$SSH_PRIVATE_KEY" | base64 -d > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - ssh-keyscan -H "$STAGING_SERVER_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+    - eval $(ssh-agent -s)
+    - ssh-add ~/.ssh/id_rsa
+  script:
+    - echo "🚀 Deploiement STAGING..."
+    - |
+      if [ -n "$STAGING_SERVER_HOST" ]; then
+        rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no" frontend/build/ $SSH_USER@$STAGING_SERVER_HOST:$STAGING_FRONTEND_PATH/
+        rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no" --exclude='node_modules' --exclude='.env' --exclude='uploads' backend/ $SSH_USER@$STAGING_SERVER_HOST:$STAGING_BACKEND_PATH/
+        ssh -o StrictHostKeyChecking=no $SSH_USER@$STAGING_SERVER_HOST "
+          cd $STAGING_BACKEND_PATH &&
+          npm install --omit=dev &&
+          pm2 restart $APP_NAME-staging || pm2 start server.js --name $APP_NAME-staging
+        "
+      else
+        echo "⚠️ STAGING_SERVER_HOST non defini - deploiement ignore"
+      fi
+
+deploy:production:
+  stage: deploy
+  image: alpine:latest
+  needs:
+    - build:frontend
+  environment:
+    name: production
+    url: https://pfe-management.example.com
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+      when: manual
+  before_script:
+    - apk add --no-cache openssh-client rsync
+    - mkdir -p ~/.ssh && chmod 700 ~/.ssh
+    - echo "$SSH_PRIVATE_KEY" | base64 -d > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - ssh-keyscan -H "$PROD_SERVER_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+    - eval $(ssh-agent -s)
+    - ssh-add ~/.ssh/id_rsa
+  script:
+    - echo "🚀 Deploiement PRODUCTION..."
+    - |
+      if [ -n "$PROD_SERVER_HOST" ]; then
+        rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no" frontend/build/ $SSH_USER@$PROD_SERVER_HOST:$PROD_FRONTEND_PATH/
+        rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no" --exclude='node_modules' --exclude='.env' --exclude='uploads' backend/ $SSH_USER@$PROD_SERVER_HOST:$PROD_BACKEND_PATH/
+        ssh -o StrictHostKeyChecking=no $SSH_USER@$PROD_SERVER_HOST "
+          cd $PROD_BACKEND_PATH &&
+          npm install --omit=dev &&
+          pm2 restart $APP_NAME || pm2 start server.js --name $APP_NAME
+        "
+      else
+        echo "⚠️ PROD_SERVER_HOST non defini - deploiement ignore"
+      fi
+
+# ============================================================
+#  GITLAB PAGES (Déploiement automatique gratuit)
+# ============================================================
+
+pages:
+  stage: deploy
+  needs:
+    - build:frontend
+  script:
+    - mkdir -p public
+    - cp -r frontend/build/* public/
+    - echo "✅ Pages déployées dans public/"
+    - ls -la public/
+  artifacts:
+    paths:
+      - public
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+      when: always

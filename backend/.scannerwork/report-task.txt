@@ -1,0 +1,6 @@
+projectKey=pfa-management-backend
+serverUrl=http://localhost:9000
+serverVersion=9.9.8.100196
+dashboardUrl=http://localhost:9000/dashboard?id=pfa-management-backend
+ceTaskId=AZ338cXNI7y9oSXpZJyZ
+ceTaskUrl=http://localhost:9000/api/ce/task?id=AZ338cXNI7y9oSXpZJyZ

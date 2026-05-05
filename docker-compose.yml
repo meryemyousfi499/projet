@@ -1,0 +1,109 @@
+# ============================================================
+#  docker-compose.yml — pfe-management (Lab DevSecOps local)
+#  Corrections :
+#    - Variables d'environnement complètes (JWT, CORS, etc.)
+#    - Healthchecks pour les dépendances
+#    - Credentials documentés (intentionnellement faibles pour tests)
+# ============================================================
+#
+#  ⚠️  NOTE SÉCURITÉ — ENVIRONNEMENT DE LAB UNIQUEMENT
+#  Les credentials MongoDB (admin/password123) et le JWT_SECRET
+#  sont volontairement simples pour permettre les tests d'attaque
+#  (force brute, injection, enum). NE PAS utiliser en production.
+#
+# ============================================================
+
+version: '3.8'
+
+services:
+
+  # ── MongoDB ───────────────────────────────────────────────
+  mongodb:
+    image: mongo:6.0
+    container_name: mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    environment:
+      # ⚠️ LAB : credentials faibles intentionnels pour tests d'attaque
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password123
+      MONGO_INITDB_DATABASE: mydb
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+
+  # ── Backend Express ───────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: backend
+    restart: always
+    ports:
+      - "5001:5000"
+    environment:
+      # Base de données
+      MONGO_URI: mongodb://admin:password123@mongodb:27017/mydb?authSource=admin
+
+      # Serveur
+      PORT: 5000
+      NODE_ENV: development   # "development" pour afficher les erreurs détaillées en lab
+
+      # ⚠️ LAB : JWT secret faible intentionnel pour tester les attaques JWT
+      JWT_SECRET: supersecretkey123
+      JWT_EXPIRE: 7d
+
+      # CORS — autoriser le frontend
+      FRONTEND_URL: http://localhost:3000
+
+      # Upload fichiers
+      UPLOAD_PATH: ./uploads
+      MAX_FILE_SIZE: 10485760   # 10 MB
+
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:5000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    volumes:
+      # Persistance des uploads
+      - backend_uploads:/app/uploads
+
+  # ── Frontend React (Nginx) ────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        # URL de l'API vue depuis le navigateur (hôte local)
+        REACT_APP_API_URL: http://localhost:5001
+    container_name: frontend
+    restart: always
+    ports:
+      - "3000:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+# ── Volumes persistants ───────────────────────────────────
+volumes:
+  mongo_data:
+    driver: local
+  backend_uploads:
+    driver: local
+
+# ── Réseau interne ────────────────────────────────────────
+networks:
+  default:
+    name: pfe-network
+    driver: bridge

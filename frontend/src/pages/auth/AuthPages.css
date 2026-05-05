@@ -1,0 +1,181 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700;800&display=swap');
+
+* { box-sizing: border-box; }
+
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(145deg, #94b4d1 0%, #8094be 40%, #3877ca 100%);
+  font-family: 'Nunito', sans-serif;
+  padding: 24px;
+}
+
+/* Hide left panel completely */
+.auth-bg { display: none; }
+
+/* ── White card ── */
+.auth-form-side {
+  background: #ffffff;
+  border-radius: 28px;
+  padding: 50px 44px 44px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-card { display: contents; }
+
+.auth-form-container { width: 100%; text-align: center; }
+
+/* ── Avatar circle ── */
+.auth-avatar {
+  width: 90px; height: 90px;
+  border-radius: 50%;
+  background: #7092db;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 32px;
+  font-size: 36px;
+  color: white;
+  box-shadow: 0 8px 24px rgba(122, 150, 228, 0.35);
+}
+
+/* ── Header ── */
+.auth-header { margin-bottom: 24px; }
+.auth-header h2 { display: none; }
+.auth-header p  { display: none; }
+
+/* ── Inputs ── */
+.form-group { margin-bottom: 14px; text-align: left; }
+.form-label { display: none; }
+
+.input-wrapper { position: relative; }
+
+.input-icon {
+  position: absolute;
+  left: 16px; top: 50%;
+  transform: translateY(-50%);
+  color: #9fc4f5;
+  font-size: 15px;
+}
+
+.form-input {
+  width: 100%;
+  padding: 14px 16px 14px 44px;
+  background: #f8f8f8;
+  border: 1.5px solid #eeeeee;
+  border-radius: 50px;
+  color: #444;
+  font-size: 14px;
+  font-family: 'Nunito', sans-serif;
+  transition: all 0.2s;
+  outline: none;
+}
+.form-input.with-icon { padding-left: 44px; }
+.form-input::placeholder { color: #bbb; font-weight: 500; }
+.form-input:focus {
+  border-color: #7092db;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(180,120,200,0.12);
+}
+
+.pwd-toggle {
+  position: absolute;
+  right: 16px; top: 50%;
+  transform: translateY(-50%);
+  background: none; border: none;
+  color: #bbb; cursor: pointer; padding: 0; font-size: 15px;
+  transition: color 0.2s;
+}
+.pwd-toggle:hover { color: #7092db; }
+
+/* ── Forgot row ── */
+.auth-forgot {
+  text-align: right;
+  margin: 6px 4px 20px;
+}
+.auth-forgot a {
+  font-size: 12.5px;
+  color: #888;
+  font-style: italic;
+  text-decoration: none;
+  font-weight: 600;
+}
+.auth-forgot a:hover { color: #7092db; }
+
+/* ── Login button ── */
+.auth-submit {
+  width: 100%;
+  padding: 14px;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: 'Nunito', sans-serif;
+  border-radius: 50px;
+  background: #7092db;
+  color: white;
+  border: none;
+  cursor: pointer;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  transition: all 0.2s;
+  box-shadow: 0 6px 20px rgba(120, 171, 238, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.auth-submit:hover:not(:disabled) {
+  background: #7092db;
+  transform: translateY(-1px);
+  box-shadow: 0 10px 28px rgba(118, 156, 214, 0.5);
+}
+.auth-submit:disabled { opacity: 0.65; cursor: not-allowed; }
+
+.btn-spinner {
+  width: 16px; height: 16px;
+  border: 2px solid rgba(255,255,255,0.4);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Footer ── */
+.auth-footer {
+  text-align: center;
+  margin-top: 10px;
+  font-size: 13px;
+  color: #aaa;
+}
+.auth-footer a { color: #7092db; font-weight: 700; text-decoration: none; }
+.auth-footer a:hover { text-decoration: underline; }
+
+/* ── Info banner (register) ── */
+.auth-info-banner {
+  background: #fdf4ff;
+  border: 1px solid #e8c8f0;
+  border-radius: 14px;
+  padding: 11px 14px;
+  margin-bottom: 14px;
+  font-size: 12px;
+  color: #7092db;
+  line-height: 1.6;
+  text-align: left;
+}
+
+/* ── demo ── */
+.demo-accounts { margin-top: 16px; padding: 12px; background: #fafafa; border-radius: 14px; border: 1px solid #eee; }
+.demo-title { font-size: 10px; font-weight: 700; color: #bbb; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+.demo-btns { display: flex; gap: 6px; }
+.demo-btn { flex: 1; padding: 7px; border-radius: 20px; font-size: 11px; font-weight: 700; font-family: 'Nunito',sans-serif; border: 1px solid #eee; background: white; color: #999; cursor: pointer; transition: all 0.2s; }
+.demo-btn:hover { background: #fdf0ff; border-color: #c9a0cc; color: #c9a0cc; }
+
+@media (max-width: 480px) {
+  .auth-form-side { padding: 40px 28px 36px; }
+}
