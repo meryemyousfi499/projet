@@ -123,7 +123,7 @@ test:backend:
 
 sast:sonarqube:backend:
   stage: sast
-  image: sonarsource/sonar-scanner-cli:latest
+  image: sonarsource/sonar-scanner-cli:5
   <<: *only_main
   needs:
     - test:backend
@@ -146,7 +146,7 @@ sast:sonarqube:backend:
 
 sast:sonarqube:frontend:
   stage: sast
-  image: sonarsource/sonar-scanner-cli:latest
+  image: sonarsource/sonar-scanner-cli:5
   <<: *only_main
   needs:
     - test:frontend
