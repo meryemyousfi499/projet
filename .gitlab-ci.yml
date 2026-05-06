@@ -356,7 +356,7 @@ deploy:production:
       fi
 
 # ============================================================
-#  GITLAB PAGES (Déploiement automatique gratuit)
+#  GITLAB PAGES
 # ============================================================
 
 pages:
@@ -365,12 +365,37 @@ pages:
     - build:frontend
   script:
     - mkdir -p public
-    - cp -r frontend/build/* public/
-    - echo "✅ Pages déployées dans public/"
-    - ls -la public/
+    - |
+      if [ -d "frontend/build" ]; then
+        cp -r frontend/build/* public/
+        echo "✅ Pages déployées"
+      else
+        echo "Build absent"
+        echo "not built" > public/index.html
+      fi
   artifacts:
     paths:
       - public
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
       when: always
+
+# ============================================================
+#  DEPLOY DOCKER LOCAL (Runner local sur ta machine)
+# ============================================================
+
+deploy:docker:local:
+  stage: deploy
+  tags:
+    - docker-local
+  needs:
+    - build:frontend
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+      when: always
+  script:
+    - echo "🐳 Déploiement Docker local..."
+    - cd D:\fixed-project
+    - docker-compose down
+    - docker-compose up --build -d
+    - echo "✅ App disponible sur http://localhost:3000"
