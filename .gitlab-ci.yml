@@ -123,49 +123,56 @@ test:backend:
 
 sast:sonarqube:backend:
   stage: sast
-  image: sonarsource/sonar-scanner-cli:5
+  image:
+    name: sonarsource/sonar-scanner-cli:latest
+    entrypoint: [""]
   <<: *only_main
   needs:
     - test:backend
   variables:
-    GIT_DEPTH: 0   # nécessaire pour l'analyse incrémentale SonarQube
+    SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"
+    GIT_DEPTH: "0"
+  cache:
+    key: sonar-cache
+    paths:
+      - .sonar/cache
   script:
-    - echo "🔍 Analyse SAST Backend — SonarQube..."
-    - |
-      sonar-scanner \
-        -Dsonar.projectKey=pfa-management-backend \
-        -Dsonar.projectName="pfa-management-backend" \
-        -Dsonar.sources=backend/src \
-        -Dsonar.tests=backend \
-        -Dsonar.test.inclusions="**/*.test.js,**/*.spec.js" \
-        -Dsonar.javascript.lcov.reportPaths=backend/coverage/lcov.info \
-        -Dsonar.host.url=$SONAR_HOST_URL \
-        -Dsonar.token=$SONAR_TOKEN_BACKEND \
-        -Dsonar.qualitygate.wait=true
+    - echo "🔍 Analyse SAST Backend — SonarCloud..."
+    - sonar-scanner
+        -Dsonar.projectKey=meryemyousfi-group_application-pfa
+        -Dsonar.organization=meryemyousfi-group
+        -Dsonar.sources=backend/src
+        -Dsonar.tests=backend/test
+        -Dsonar.javascript.lcov.reportPaths=backend/coverage/lcov.info
+        -Dsonar.host.url=$SONAR_HOST_URL
+        -Dsonar.token=$SONAR_TOKEN
   allow_failure: false
 
 sast:sonarqube:frontend:
   stage: sast
-  image: sonarsource/sonar-scanner-cli:5
+  image:
+    name: sonarsource/sonar-scanner-cli:latest
+    entrypoint: [""]
   <<: *only_main
   needs:
     - test:frontend
   variables:
-    GIT_DEPTH: 0
+    SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"
+    GIT_DEPTH: "0"
+  cache:
+    key: sonar-cache
+    paths:
+      - .sonar/cache
   script:
-    - echo "🔍 Analyse SAST Frontend — SonarQube..."
-    - |
-      sonar-scanner \
-        -Dsonar.projectKey=pfa-management-Frontend \
-        -Dsonar.projectName="pfa-management-Frontend" \
-        -Dsonar.sources=frontend/src \
-        -Dsonar.tests=frontend/src \
-        -Dsonar.test.inclusions="**/*.test.js,**/*.test.jsx,**/*.spec.js" \
-        -Dsonar.javascript.lcov.reportPaths=frontend/coverage/lcov.info \
-        -Dsonar.host.url=$SONAR_HOST_URL \
-        -Dsonar.token=$SONAR_TOKEN_FRONTEND \
-        -Dsonar.qualitygate.wait=true
-  allow_failure: true  # frontend tests en allow_failure donc cohérent
+    - echo "🔍 Analyse SAST Frontend — SonarCloud..."
+    - sonar-scanner
+        -Dsonar.projectKey=meryemyousfi-group_application-pfa-frontend
+        -Dsonar.organization=meryemyousfi-group
+        -Dsonar.sources=frontend/src
+        -Dsonar.javascript.lcov.reportPaths=frontend/coverage/lcov.info
+        -Dsonar.host.url=$SONAR_HOST_URL
+        -Dsonar.token=$SONAR_TOKEN
+  allow_failure: true
 
 # ============================================================
 #  STAGE 4 — SCAN DÉPENDANCES (Trivy)
