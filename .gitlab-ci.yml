@@ -141,8 +141,10 @@ sast:sonarqube:backend:
     - sonar-scanner
         -Dsonar.projectKey=meryemyousfi-group_application-pfa
         -Dsonar.organization=meryemyousfi-group
-        -Dsonar.sources=backend/src
+        -Dsonar.sources=backend
+        -Dsonar.exclusions=backend/node_modules/**,backend/coverage/**,backend/test/**
         -Dsonar.tests=backend/test
+        -Dsonar.test.inclusions=backend/test/**/*.test.js
         -Dsonar.javascript.lcov.reportPaths=backend/coverage/lcov.info
         -Dsonar.host.url=$SONAR_HOST_URL
         -Dsonar.token=$SONAR_TOKEN
