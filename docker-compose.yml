@@ -1,19 +1,6 @@
 # ============================================================
 #  docker-compose.yml — pfe-management (Lab DevSecOps local)
-#  Corrections :
-#    - Variables d'environnement complètes (JWT, CORS, etc.)
-#    - Healthchecks pour les dépendances
-#    - Credentials documentés (intentionnellement faibles pour tests)
 # ============================================================
-#
-#  ⚠️  NOTE SÉCURITÉ — ENVIRONNEMENT DE LAB UNIQUEMENT
-#  Les credentials MongoDB (admin/password123) et le JWT_SECRET
-#  sont volontairement simples pour permettre les tests d'attaque
-#  (force brute, injection, enum). NE PAS utiliser en production.
-#
-# ============================================================
-
-
 
 services:
 
@@ -27,7 +14,6 @@ services:
     volumes:
       - mongo_data:/data/db
     environment:
-      # ⚠️ LAB : credentials faibles intentionnels pour tests d'attaque
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD: password123
       MONGO_INITDB_DATABASE: mydb
@@ -57,6 +43,7 @@ services:
       UPLOAD_PATH: ./uploads
     depends_on:
       mongodb:
+        condition: service_healthy
     volumes:
       - backend_uploads:/app/uploads
 
@@ -66,15 +53,13 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        # URL de l'API vue depuis le navigateur (hôte local)
         REACT_APP_API_URL: http://localhost:5001
     container_name: frontend
     restart: always
     ports:
       - "3000:80"
     depends_on:
-      backend:
-        - backend 
+      - backend
 
 # ── Volumes persistants ───────────────────────────────────
 volumes:
