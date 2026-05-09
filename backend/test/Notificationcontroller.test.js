@@ -9,7 +9,7 @@ const {
   deleteNotification,
 } = require('../controllers/notificationController');
 
-const { chain, mockRes } = require('../test/helpers');
+const { chain, mockRes } = require('./helpers');
 
 // ─── Tests ─────────────────────────────────────────────────────────────────────
 
