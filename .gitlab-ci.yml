@@ -397,6 +397,7 @@ deploy:docker:local:
     - if: $CI_COMMIT_BRANCH == "main"
       when: always
   script:
+    - git config --global --add safe.directory D:/fixed-project
     - cd D:\fixed-project
     - git pull https://gitlab.com/meryemyousfi-group/application-pfa.git main
     - docker-compose up --build -d
