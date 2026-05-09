@@ -399,6 +399,6 @@ deploy:docker:local:
   script:
     - git config --global --add safe.directory D:/fixed-project
     - cd D:\fixed-project
-    - git pull https://gitlab.com/meryemyousfi-group/application-pfa.git main
+    - git pull https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.com/meryemyousfi-group/application-pfa.git main
     - docker-compose up --build -d
     - Write-Host "✅ App disponible sur http://localhost:3000"
