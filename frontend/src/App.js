@@ -2,7 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './context/AuthContext';
-
+import ResetPasswordPage from './pages/auth/Resetpasswordpage';
 // Auth pages
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
@@ -58,7 +58,7 @@ function AppRoutes() {
       <Route path="/login"            element={<PublicRoute><LoginPage /></PublicRoute>} />
       <Route path="/register"         element={<PublicRoute><RegisterPage /></PublicRoute>} />
       <Route path="/forgot-password"  element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
-
+      <Route path="/reset-password/:token" element={<PublicRoute><ResetPasswordPage /></PublicRoute>} />
       {/* Protected */}
       <Route path="/" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
         <Route index element={<Navigate to="/dashboard" replace />} />
