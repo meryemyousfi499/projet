@@ -396,9 +396,9 @@ deploy:docker:local:
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
       when: always
-  script:
+ script:
     - git config --global --add safe.directory D:/fixed-project
     - cd D:\fixed-project
     - git pull https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.com/meryemyousfi-group/application-pfa.git main
-    - docker-compose up --build -d
+    - docker-compose up -d
     - Write-Host "✅ App disponible sur http://localhost:3000"
