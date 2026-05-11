@@ -364,22 +364,20 @@ pages:
   needs:
     - build:frontend
   script:
-    - New-Item -ItemType Directory -Force -Path public | Out-Null
+    - mkdir -p public
     - |
-      if (Test-Path "frontend/build") {
-        Copy-Item -Recurse -Force "frontend/build\*" "public\"
-        Write-Host "✅ Pages déployées"
-      } else {
-        Write-Host "Build absent"
-        Set-Content -Path "public\index.html" -Value "not built"
-      }
+      if [ -d "frontend/build" ]; then
+        cp -r frontend/build/* public/
+        echo "✅ Pages déployées"
+      else
+        echo "not built" > public/index.html
+      fi
   artifacts:
     paths:
       - public
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
       when: always
-
 # ============================================================
 #  DEPLOY DOCKER LOCAL (Runner local sur ta machine)
 # ============================================================
