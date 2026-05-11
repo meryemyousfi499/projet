@@ -1,5 +1,6 @@
 const Subject = require('../models/Subject');
 const { createNotification } = require('../utils/notifications');
+const mongoose = require('mongoose');
 const User = require('../models/User');
 
 exports.getAllSubjects = async (req, res) => {
@@ -27,6 +28,9 @@ exports.getAllSubjects = async (req, res) => {
 
 exports.getSubjectById = async (req, res) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    return res.status(404).json({ success: false, message: 'Not found' });
+    }
     const subject = await Subject.findById(req.params.id)
       .populate('encadrantId', 'nom prenom email departement')
       .exec(); // L29 ✅
@@ -52,6 +56,9 @@ exports.createSubject = async (req, res) => {
 
 exports.updateSubject = async (req, res) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    return res.status(404).json({ success: false, message: 'Not found' });
+    }
     let subject = await Subject.findById(req.params.id).exec(); // L53 ✅
     if (!subject) return res.status(404).json({ success: false, message: 'Subject not found' });
     if (req.user.role !== 'ROLE_ADMIN' && subject.encadrantId.toString() !== req.user.id) {
@@ -66,6 +73,9 @@ exports.updateSubject = async (req, res) => {
 
 exports.validateSubject = async (req, res) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    return res.status(404).json({ success: false, message: 'Not found' });
+    }
     const { statut, commentaireAdmin } = req.body;
     const subject = await Subject.findByIdAndUpdate(
       req.params.id,
@@ -87,6 +97,9 @@ exports.validateSubject = async (req, res) => {
 
 exports.deleteSubject = async (req, res) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    return res.status(404).json({ success: false, message: 'Not found' });
+    }
     const subject = await Subject.findByIdAndDelete(req.params.id).exec(); // L86 ✅
     if (!subject) return res.status(404).json({ success: false, message: 'Subject not found' });
     res.json({ success: true, message: 'Subject deleted' });

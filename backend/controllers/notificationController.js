@@ -1,5 +1,5 @@
 const Notification = require('../models/Notification');
-
+const mongoose = require('mongoose');
 exports.getNotifications = async (req, res) => {
   try {
     const notifications = await Notification.find({ userId: req.user.id })
@@ -15,6 +15,9 @@ exports.getNotifications = async (req, res) => {
 
 exports.markAsRead = async (req, res) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    return res.status(404).json({ success: false, message: 'Not found' });
+    }
     await Notification.findByIdAndUpdate(req.params.id, { lu: true }).exec(); // L15 ✅
     res.json({ success: true });
   } catch (err) {
@@ -33,6 +36,9 @@ exports.markAllAsRead = async (req, res) => {
 
 exports.deleteNotification = async (req, res) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    return res.status(404).json({ success: false, message: 'Not found' });
+    }
     await Notification.findByIdAndDelete(req.params.id).exec(); // L33 ✅
     res.json({ success: true });
   } catch (err) {

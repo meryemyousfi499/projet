@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Project = require('../models/Project');
 const Milestone = require('../models/Milestone');
 
@@ -35,6 +36,9 @@ exports.getProjects = async (req, res) => {
 
 exports.getProjectById = async (req, res) => {
   try {
+     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(404).json({ success: false, message: 'Candidature introuvable' });
+    }
     const project = await Project.findById(req.params.id)
       .populate('sujetId', 'titre technologies description')
       .populate('etudiants', 'nom prenom email departement avatar')
@@ -49,6 +53,9 @@ exports.getProjectById = async (req, res) => {
 
 exports.updateProject = async (req, res) => {
   try {
+     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(404).json({ success: false, message: 'Candidature introuvable' });
+    }
     const project = await Project.findByIdAndUpdate(req.params.id, req.body, { new: true }).exec(); // L51 ✅
     if (!project) return res.status(404).json({ success: false, message: 'Project not found' });
     res.json({ success: true, data: project });
@@ -59,6 +66,9 @@ exports.updateProject = async (req, res) => {
 
 exports.updateProgression = async (req, res) => {
   try {
+     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(404).json({ success: false, message: 'Candidature introuvable' });
+    }
     const milestones = await Milestone.find({ projectId: req.params.id }).exec(); // L61 ✅
     const total = milestones.length;
     const done = milestones.filter(m => m.statut === 'terminé').length;

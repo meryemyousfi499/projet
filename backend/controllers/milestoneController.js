@@ -1,4 +1,5 @@
 const Milestone = require('../models/Milestone');
+const mongoose = require('mongoose');
 const Project = require('../models/Project');
 
 const recalcProgression = async (projectId) => {
@@ -33,6 +34,9 @@ exports.createMilestone = async (req, res) => {
 
 exports.updateMilestone = async (req, res) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    return res.status(404).json({ success: false, message: 'Milestone not found' });
+    }
     const milestone = await Milestone.findByIdAndUpdate(req.params.id, req.body, { new: true }).exec(); // L34 ✅
     if (!milestone) return res.status(404).json({ success: false, message: 'Milestone not found' });
     await recalcProgression(milestone.projectId);
@@ -44,6 +48,9 @@ exports.updateMilestone = async (req, res) => {
 
 exports.deleteMilestone = async (req, res) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    return res.status(404).json({ success: false, message: 'Milestone not found' });
+    }
     const milestone = await Milestone.findByIdAndDelete(req.params.id).exec(); // L45 ✅
     if (!milestone) return res.status(404).json({ success: false, message: 'Milestone not found' });
     await recalcProgression(milestone.projectId);
