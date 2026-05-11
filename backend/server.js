@@ -54,23 +54,29 @@ app.use((err, req, res, next) => {
 
 // ✅ Détection automatique : si le fichier est require() par les tests
 // il ne démarre pas le serveur sur un port
+const https = require('https');
+const fs = require('fs');
+
 let server;
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {
-    // require.main === module → true seulement si lancé directement (node server.js)
-    // false si importé par les tests (require('../server'))
     if (require.main === module) {
       console.log('✅ MongoDB Connected');
-      server = app.listen(process.env.PORT || 5000, () => {
-        console.log(`🚀 Server running on port ${process.env.PORT || 5000}`);
+
+      const options = {
+        key: fs.readFileSync(path.join(__dirname, 'cert.key')),
+        cert: fs.readFileSync(path.join(__dirname, 'cert.crt'))
+      };
+
+      server = https.createServer(options, app).listen(process.env.PORT || 5000, () => {
+        console.log(`🚀 Server HTTPS running on port ${process.env.PORT || 5000}`);
       });
     }
   })
   .catch(err => {     
     console.error('❌ MongoDB connection error:', err);
-
     if (process.env.NODE_ENV !== 'test') {
-    process.exit(1);
+      process.exit(1);
     }
   });
 module.exports = app;
