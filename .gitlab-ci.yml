@@ -364,15 +364,15 @@ pages:
   needs:
     - build:frontend
   script:
-    - mkdir -p public
+    - New-Item -ItemType Directory -Force -Path public | Out-Null
     - |
-      if [ -d "frontend/build" ]; then
-        cp -r frontend/build/* public/
-        echo "✅ Pages déployées"
-      else
-        echo "Build absent"
-        echo "not built" > public/index.html
-      fi
+      if (Test-Path "frontend/build") {
+        Copy-Item -Recurse -Force "frontend/build\*" "public\"
+        Write-Host "✅ Pages déployées"
+      } else {
+        Write-Host "Build absent"
+        Set-Content -Path "public\index.html" -Value "not built"
+      }
   artifacts:
     paths:
       - public
@@ -400,5 +400,5 @@ deploy:docker:local:
     - git config --global --add safe.directory D:/fixed-project
     - cd D:\fixed-project
     - git pull https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.com/meryemyousfi-group/application-pfa.git main
-    - docker-compose up -d
+    - docker-compose up -d --build  
     - Write-Host "✅ App disponible sur http://localhost:3000"
