@@ -393,7 +393,7 @@ deploy:docker:local:
     GIT_DEPTH: "1"
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
-      when: never
+      when: always
   script:
     - git config --global --add safe.directory D:/fixed-project
     - cd D:\fixed-project
