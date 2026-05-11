@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">83.33% </span>
+                <span class="strong">80% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>35/42</span>
+                <span class='fraction'>36/45</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">83.33% </span>
+                <span class="strong">80% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>35/42</span>
+                <span class='fraction'>36/45</span>
             </div>
         
             
@@ -138,7 +138,13 @@
 <a name='L73'></a><a href='#L73'>73</a>
 <a name='L74'></a><a href='#L74'>74</a>
 <a name='L75'></a><a href='#L75'>75</a>
-<a name='L76'></a><a href='#L76'>76</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">11x</span>
+<a name='L76'></a><a href='#L76'>76</a>
+<a name='L77'></a><a href='#L77'>77</a>
+<a name='L78'></a><a href='#L78'>78</a>
+<a name='L79'></a><a href='#L79'>79</a>
+<a name='L80'></a><a href='#L80'>80</a>
+<a name='L81'></a><a href='#L81'>81</a>
+<a name='L82'></a><a href='#L82'>82</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">11x</span>
 <span class="cline-any cline-yes">11x</span>
 <span class="cline-any cline-yes">11x</span>
 <span class="cline-any cline-yes">11x</span>
@@ -194,22 +200,28 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">11x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">11x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">11x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">11x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -269,23 +281,29 @@ app.use(<span class="fstat-no" title="function not covered" >(e</span>rr, req, r
 &nbsp;
 // ✅ Détection automatique : si le fichier est require() par les tests
 // il ne démarre pas le serveur sur un port
+const https = require('https');
+const fs = require('fs');
+&nbsp;
 let server;
 mongoose.connect(process.env.MONGO_URI)
-  .then(<span class="fstat-no" title="function not covered" >()</span> =&gt; {
-    // require.main === module → true seulement si lancé directement (node server.js)
-    // false si importé par les tests (require('../server'))
-<span class="cstat-no" title="statement not covered" >    if (require.main === module) {</span>
+  .then(() =&gt; {
+    <span class="missing-if-branch" title="if path not taken" >I</span>if (require.main === module) {
 <span class="cstat-no" title="statement not covered" >      console.log('✅ MongoDB Connected');</span>
-<span class="cstat-no" title="statement not covered" >      server = app.listen(process.env.PORT || 5000, <span class="fstat-no" title="function not covered" >()</span> =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >        console.log(`🚀 Server running on port ${process.env.PORT || 5000}`);</span>
+&nbsp;
+      const options = <span class="cstat-no" title="statement not covered" >{</span>
+        key: fs.readFileSync(path.join(__dirname, 'cert.key')),
+        cert: fs.readFileSync(path.join(__dirname, 'cert.crt'))
+      };
+&nbsp;
+<span class="cstat-no" title="statement not covered" >      server = https.createServer(options, app).listen(process.env.PORT || 5000, <span class="fstat-no" title="function not covered" >()</span> =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >        console.log(`🚀 Server HTTPS running on port ${process.env.PORT || 5000}`);</span>
       });
     }
   })
-  .catch(err =&gt; {     
-    console.error('❌ MongoDB connection error:', err);
-&nbsp;
-    <span class="missing-if-branch" title="if path not taken" >I</span>if (process.env.NODE_ENV !== 'test') {
-<span class="cstat-no" title="statement not covered" >    process.exit(1);</span>
+  .catch(<span class="fstat-no" title="function not covered" >er</span>r =&gt; {     
+<span class="cstat-no" title="statement not covered" >    console.error('❌ MongoDB connection error:', err);</span>
+<span class="cstat-no" title="statement not covered" >    if (process.env.NODE_ENV !== 'test') {</span>
+<span class="cstat-no" title="statement not covered" >      process.exit(1);</span>
     }
   });
 module.exports = app;</pre></td></tr></table></pre>
@@ -295,7 +313,7 @@ module.exports = app;</pre></td></tr></table></pre>
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-05-07T16:02:28.927Z
+                at 2026-05-11T14:59:33.544Z
             </div>
         <script src="../prettify.js"></script>
         <script>

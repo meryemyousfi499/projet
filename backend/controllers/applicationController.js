@@ -1,6 +1,5 @@
 const Application = require('../models/Application');
 const Subject     = require('../models/Subject');
-const mongoose = require('mongoose');
 const Project     = require('../models/Project');
 const Milestone   = require('../models/Milestone');
 const Group       = require('../models/Group');
@@ -76,13 +75,10 @@ exports.getApplications = async (req, res) => {
     res.json({ success: true, data: applications });
   } catch (err) { res.status(500).json({ success: false, message: err.message }); }
 };
-const mongoose = require('mongoose');
+
 // PUT /api/applications/:id
 exports.updateApplication = async (req, res) => {
   try {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-      return res.status(404).json({ success: false, message: 'Candidature introuvable' });
-    }
     const { statut, commentaireEncadrant } = req.body;
     const app = await Application.findById(req.params.id)
       .populate({ path: 'groupId', populate: { path: 'membres', select: '_id nom prenom' } })
@@ -138,9 +134,6 @@ exports.updateApplication = async (req, res) => {
 // DELETE /api/applications/:id
 exports.deleteApplication = async (req, res) => {
   try {
-     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-      return res.status(404).json({ success: false, message: 'Candidature introuvable' });
-    }
     const group = await Group.findOne({ chef: req.user.id }).exec(); // L140 ✅
     if (!group) return res.status(403).json({ success: false, message: 'Seul le chef du groupe peut annuler.' });
     const app = await Application.findOneAndDelete({ _id: req.params.id, groupId: group._id }).exec(); // L142 ✅

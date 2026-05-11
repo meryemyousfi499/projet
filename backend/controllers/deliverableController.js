@@ -1,6 +1,5 @@
 const Deliverable = require('../models/Deliverable');
 const { createNotification } = require('../utils/notifications');
-const mongoose = require('mongoose');
 const Project = require('../models/Project');
 
 exports.getDeliverables = async (req, res) => {
@@ -17,9 +16,6 @@ exports.getDeliverables = async (req, res) => {
 
 exports.uploadDeliverable = async (req, res) => {
   try {
-     if (!mongoose.Types.ObjectId.isValid(req.params.projectId)) {
-      return res.status(404).json({ success: false, message: 'Candidature introuvable' });
-    }
     if (!req.file) return res.status(400).json({ success: false, message: 'No file uploaded' });
     const deliverable = await Deliverable.create({
       projectId: req.params.projectId,
@@ -44,9 +40,6 @@ exports.uploadDeliverable = async (req, res) => {
 
 exports.deleteDeliverable = async (req, res) => {
   try {
-     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-      return res.status(404).json({ success: false, message: 'Candidature introuvable' });
-    }
     const deliverable = await Deliverable.findByIdAndDelete(req.params.id).exec(); // L43 ✅
     if (!deliverable) return res.status(404).json({ success: false, message: 'Deliverable not found' });
     res.json({ success: true, message: 'Deliverable deleted' });

@@ -1,5 +1,4 @@
 const User = require('../models/User');
-const mongoose = require('mongoose');
 exports.getAllUsers = async (req, res) => {
   try {
     const { role, statut, departement, search, page = 1, limit = 10 } = req.query;
@@ -26,9 +25,6 @@ exports.getAllUsers = async (req, res) => {
 
 exports.getUserById = async (req, res) => {
   try {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-    return res.status(404).json({ success: false, message: 'Not found' });
-    }
     const user = await User.findById(req.params.id).exec(); // L28 ✅
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
     res.json({ success: true, data: user });
@@ -48,9 +44,6 @@ exports.createUser = async (req, res) => {
 
 exports.updateUser = async (req, res) => {
   try {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-    return res.status(404).json({ success: false, message: 'Not found' });
-    }
     const { motDePasse, ...updateData } = req.body;
     const user = await User.findByIdAndUpdate(req.params.id, updateData, { new: true, runValidators: true }).exec(); // L48 ✅
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
@@ -62,9 +55,6 @@ exports.updateUser = async (req, res) => {
 
 exports.deleteUser = async (req, res) => {
   try {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-    return res.status(404).json({ success: false, message: 'Not found' });
-    }
     const user = await User.findByIdAndDelete(req.params.id).exec(); // L58 ✅
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
     res.json({ success: true, message: 'User deleted' });
@@ -75,9 +65,6 @@ exports.deleteUser = async (req, res) => {
 
 exports.toggleUserStatus = async (req, res) => {
   try {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-    return res.status(404).json({ success: false, message: 'Not found' });
-    }
     const user = await User.findById(req.params.id).exec();
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
     user.statut = user.statut === 'actif' ? 'inactif' : 'actif';
@@ -101,9 +88,6 @@ exports.getSupervisors = async (req, res) => {
 
 exports.updateAvatar = async (req, res) => {
   try {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-    return res.status(404).json({ success: false, message: 'Not found' });
-    }
     if (!req.file) {
       return res.status(400).json({ success: false, message: 'Aucun fichier uploadé' });
     }

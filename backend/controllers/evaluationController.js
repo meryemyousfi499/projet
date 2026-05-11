@@ -1,6 +1,5 @@
 const Evaluation = require('../models/Evaluation');
 const { createNotification } = require('../utils/notifications');
-const mongoose = require('mongoose');
 const Project = require('../models/Project');
 
 exports.getEvaluation = async (req, res) => {
@@ -16,9 +15,6 @@ exports.getEvaluation = async (req, res) => {
 
 exports.createOrUpdateEvaluation = async (req, res) => {
   try {
-     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-      return res.status(404).json({ success: false, message: 'Candidature introuvable' });
-    }
     const { noteEncadrant, noteJury, commentaireEncadrant, commentaireJury } = req.body;
     let evaluation = await Evaluation.findOne({ projectId: req.params.projectId }).exec(); // L18 ✅
     if (evaluation) {

@@ -1,6 +1,5 @@
 const Message = require('../models/Message');
 const Group   = require('../models/Group');
-const mongoose = require('mongoose');
 const Project = require('../models/Project');
 const { createNotification } = require('../utils/notifications');
 
@@ -105,9 +104,6 @@ exports.sendFile = async (req, res) => {
 
 exports.getUnreadCounts = async (req, res) => {
   try {
-     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-      return res.status(404).json({ success: false, message: 'Candidature introuvable' });
-    }
     let query = {};
     if (req.user.role === 'ROLE_STUDENT') {
       const group = await Group.findOne({ membres: req.user.id }).exec();

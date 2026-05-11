@@ -1,7 +1,6 @@
 jest.mock('../models/Subject');
 jest.mock('../models/User');
 jest.mock('../utils/notifications');
-
 const Subject = require('../models/Subject');
 const User    = require('../models/User');
 const { createNotification } = require('../utils/notifications');
