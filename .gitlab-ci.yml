@@ -361,6 +361,8 @@ deploy:production:
 
 pages:
   stage: deploy
+  tags:
+    - docker-local        # ← AJOUTER CECI
   needs:
     - build:frontend
   script:
