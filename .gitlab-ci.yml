@@ -43,10 +43,6 @@ install:frontend:
   script:
     - echo "📦 Installation Frontend..."
     - cd frontend && npm install --legacy-peer-deps
-  artifacts:
-    paths:
-      - frontend/node_modules/
-    expire_in: 1 hour
 
 install:backend:
   stage: install
@@ -55,10 +51,7 @@ install:backend:
   script:
     - echo "📦 Installation Backend..."
     - cd backend && npm install
-  artifacts:
-    paths:
-      - backend/node_modules/
-    expire_in: 1 hour
+  
 
 # ============================================================
 #  STAGE 2 — TEST
@@ -297,7 +290,7 @@ deploy:staging:
     url: https://staging.pfe-management.example.com
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
-      when: never
+      when: always
   before_script:
     - apk add --no-cache openssh-client rsync
     - mkdir -p ~/.ssh && chmod 700 ~/.ssh
