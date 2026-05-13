@@ -131,7 +131,8 @@ sast:sonarqube:backend:
       - .sonar/cache
   script:
     - echo "🔍 Analyse SAST Backend — SonarCloud..."
-    - sonar-scanner
+    - |
+      sonar-scanner
         -Dsonar.projectKey=meryemyousfi-group_application-pfa
         -Dsonar.organization=meryemyousfi-group
         -Dsonar.sources=backend
@@ -160,7 +161,8 @@ sast:sonarqube:frontend:
       - .sonar/cache
   script:
     - echo "🔍 Analyse SAST Frontend — SonarCloud..."
-    - sonar-scanner
+    - |
+      sonar-scanner
         -Dsonar.projectKey=meryemyousfi-group_application-pfa-frontend
         -Dsonar.organization=meryemyousfi-group
         -Dsonar.sources=frontend/src
