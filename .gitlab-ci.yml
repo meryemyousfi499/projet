@@ -2,7 +2,6 @@
 #  GitLab CI/CD — pfe-management (React 18 + Express/MongoDB)
 #  Version DevSecOps — SonarQube + Trivy intégrés
 # ============================================================
-
 image: node:18-alpine
 
 variables:
@@ -12,8 +11,8 @@ variables:
 stages:
   - install
   - test
-  - sast        # ← NOUVEAU : analyse statique du code (SonarQube)
-  - scan        # ← NOUVEAU : scan des dépendances (Trivy)
+  - sast
+  - scan
   - build
   - deploy
 
@@ -51,7 +50,6 @@ install:backend:
   script:
     - echo "📦 Installation Backend..."
     - cd backend && npm install
-  
 
 # ============================================================
 #  STAGE 2 — TEST
@@ -109,9 +107,6 @@ test:backend:
 
 # ============================================================
 #  STAGE 3 — SAST (SonarQube)
-#  Variables requises dans GitLab CI/CD Settings :
-#    - SONAR_HOST_URL  (ex: http://localhost:9000)
-#    - SONAR_TOKEN     (token généré dans SonarQube)
 # ============================================================
 
 sast:sonarqube:backend:
@@ -132,15 +127,15 @@ sast:sonarqube:backend:
   script:
     - echo "🔍 Analyse SAST Backend — SonarCloud..."
     - |
-      sonar-scanner
-        -Dsonar.projectKey=meryemyousfi-group_application-pfa
-        -Dsonar.organization=meryemyousfi-group
-        -Dsonar.sources=backend
-        -Dsonar.exclusions=backend/node_modules/**,backend/coverage/**,backend/test/**
-        -Dsonar.tests=backend/test
-        -Dsonar.test.inclusions=backend/test/**/*.test.js
-        -Dsonar.javascript.lcov.reportPaths=backend/coverage/lcov.info
-        -Dsonar.host.url=$SONAR_HOST_URL
+      sonar-scanner \
+        -Dsonar.projectKey=meryemyousfi-group_application-pfa \
+        -Dsonar.organization=meryemyousfi-group \
+        -Dsonar.sources=backend \
+        -Dsonar.exclusions=backend/node_modules/**,backend/coverage/**,backend/test/** \
+        -Dsonar.tests=backend/test \
+        -Dsonar.test.inclusions=backend/test/**/*.test.js \
+        -Dsonar.javascript.lcov.reportPaths=backend/coverage/lcov.info \
+        -Dsonar.host.url=$SONAR_HOST_URL \
         -Dsonar.token=$SONAR_TOKEN
   allow_failure: false
 
@@ -155,26 +150,24 @@ sast:sonarqube:frontend:
   variables:
     SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"
     GIT_DEPTH: "0"
-  cache:
+  cache:                          # ✅ cache correctement fermé ici
     key: sonar-cache
     paths:
       - .sonar/cache
-  script:
+  script:                         # ✅ script au bon niveau d'indentation
     - echo "🔍 Analyse SAST Frontend — SonarCloud..."
     - |
-      sonar-scanner
-        -Dsonar.projectKey=meryemyousfi-group_application-pfa-frontend
-        -Dsonar.organization=meryemyousfi-group
-        -Dsonar.sources=frontend/src
-        -Dsonar.javascript.lcov.reportPaths=frontend/coverage/lcov.info
-        -Dsonar.host.url=$SONAR_HOST_URL
+      sonar-scanner \
+        -Dsonar.projectKey=meryemyousfi-group_application-pfa-frontend \
+        -Dsonar.organization=meryemyousfi-group \
+        -Dsonar.sources=frontend/src \
+        -Dsonar.javascript.lcov.reportPaths=frontend/coverage/lcov.info \
+        -Dsonar.host.url=$SONAR_HOST_URL \
         -Dsonar.token=$SONAR_TOKEN
   allow_failure: true
 
 # ============================================================
 #  STAGE 4 — SCAN DÉPENDANCES (Trivy)
-#  Trivy scanne les package-lock.json pour les CVEs
-#  Rapport JSON sauvegardé en artifact
 # ============================================================
 
 scan:trivy:
@@ -187,7 +180,6 @@ scan:trivy:
     - sast:sonarqube:backend
     - sast:sonarqube:frontend
   variables:
-    # Cache la base de données Trivy entre les jobs pour accélérer
     TRIVY_CACHE_DIR: "$CI_PROJECT_DIR/.trivy-cache"
   cache:
     key: trivy-db
@@ -196,42 +188,35 @@ scan:trivy:
   script:
     - echo "🔎 Scan des dépendances — Trivy..."
     - mkdir -p reports
-
-    # Scan backend
     - echo "--- Scan backend/package-lock.json ---"
-    - trivy fs backend/package-lock.json
-        --format table
-        --exit-code 0
-        --severity LOW,MEDIUM,HIGH,CRITICAL
+    - |
+      trivy fs backend/package-lock.json \
+        --format table \
+        --exit-code 0 \
+        --severity LOW,MEDIUM,HIGH,CRITICAL \
         --output reports/trivy-backend.txt
-
-    # Scan frontend
     - echo "--- Scan frontend/package-lock.json ---"
-    - trivy fs frontend/package-lock.json
-        --format table
-        --exit-code 0
-        --severity LOW,MEDIUM,HIGH,CRITICAL
+    - |
+      trivy fs frontend/package-lock.json \
+        --format table \
+        --exit-code 0 \
+        --severity LOW,MEDIUM,HIGH,CRITICAL \
         --output reports/trivy-frontend.txt
-
-    # Rapport JSON consolidé (pour archivage)
-    - trivy fs .
-        --format json
-        --exit-code 0
-        --severity HIGH,CRITICAL
+    - |
+      trivy fs . \
+        --format json \
+        --exit-code 0 \
+        --severity HIGH,CRITICAL \
         --output reports/trivy-report.json
-
-    # Affichage résumé
     - echo "📊 Résumé Backend:"
     - cat reports/trivy-backend.txt | tail -5
     - echo "📊 Résumé Frontend:"
     - cat reports/trivy-frontend.txt | tail -5
-
-    # Echec si des CVE CRITICAL existent (politique de sécurité)
-    - trivy fs .
-        --exit-code 1
-        --severity CRITICAL
+    - |
+      trivy fs . \
+        --exit-code 1 \
+        --severity CRITICAL \
         --quiet || (echo "❌ Des vulnérabilités CRITICAL ont été détectées!" && exit 1)
-
   artifacts:
     when: always
     name: "trivy-reports-$CI_COMMIT_SHORT_SHA"
@@ -279,7 +264,7 @@ build:frontend:
     expire_in: 1 week
 
 # ============================================================
-#  STAGE 6 — DEPLOY (SSH vers serveur)
+#  STAGE 6 — DEPLOY
 # ============================================================
 
 deploy:staging:
@@ -296,7 +281,7 @@ deploy:staging:
   before_script:
     - apk add --no-cache openssh-client rsync
     - mkdir -p ~/.ssh && chmod 700 ~/.ssh
-    - echo "$SSH_PRIVATE_KEY" | base64 -d > ~/.ssh/id_rsa
+    - echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
     - chmod 600 ~/.ssh/id_rsa
     - ssh-keyscan -H "$STAGING_SERVER_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
     - eval $(ssh-agent -s)
@@ -326,11 +311,11 @@ deploy:production:
     url: https://pfe-management.example.com
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
-      when: never
+      when: manual       # ✅ corrigé : "never" → "manual" (déclenché manuellement)
   before_script:
     - apk add --no-cache openssh-client rsync
     - mkdir -p ~/.ssh && chmod 700 ~/.ssh
-    - echo "$SSH_PRIVATE_KEY" | base64 -d > ~/.ssh/id_rsa
+    - echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
     - chmod 600 ~/.ssh/id_rsa
     - ssh-keyscan -H "$PROD_SERVER_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
     - eval $(ssh-agent -s)
@@ -373,8 +358,9 @@ pages:
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
       when: always
+
 # ============================================================
-#  DEPLOY DOCKER LOCAL (Runner local sur ta machine)
+#  DEPLOY DOCKER LOCAL
 # ============================================================
 
 deploy:docker:local:
@@ -385,6 +371,6 @@ deploy:docker:local:
     DOCKER_HOST: tcp://localhost:2375
   script:
     - git config --global --add safe.directory D:/fixed-project
-    - cd D:\fixed-project
+    - cd D:/fixed-project
     - git pull https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.com/meryemyousfi-group/application-pfa.git main
     - docker-compose up -d --build
