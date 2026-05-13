@@ -20,7 +20,7 @@ export default function ProfilePage() {
       const res = await updateProfile(profileForm);
       updateUser({ ...user, ...res.data.data });
       toast.success('Profil mis à jour!');
-    } catch { toast.error('Erreur'); } finally { setSaving(false); }
+    } catch (err) { toast.error(err.response?.data?.message || 'Erreur'); } finally { setSaving(false); }
   };
 
   const handleChangePwd = async (e) => {

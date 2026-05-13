@@ -1,6 +1,8 @@
 const User = require('../models/User');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
+const { JSDOM } = require('jsdom');
+const DOMPurify = require('dompurify')(new JSDOM().window);
 
 // ─── Helper : envoyer le token JWT ────────────────────────────────────────
 const sendToken = (user, statusCode, res) => {
@@ -119,17 +121,32 @@ exports.getMe = async (req, res) => {
 exports.updateProfile = async (req, res) => {
   try {
     const { nom, prenom, departement } = req.body;
+
+    // ✅ Validation type
+    if (nom     && typeof nom     !== 'string') return res.status(400).json({ success: false, message: 'Nom invalide' });
+    if (prenom  && typeof prenom  !== 'string') return res.status(400).json({ success: false, message: 'Prénom invalide' });
+
+    // ✅ Sanitisation XSS — supprime tout HTML/JS
+    const cleanNom       = DOMPurify.sanitize(nom?.trim()        || '', { ALLOWED_TAGS: [] });
+    const cleanPrenom    = DOMPurify.sanitize(prenom?.trim()     || '', { ALLOWED_TAGS: [] });
+    const cleanDept      = DOMPurify.sanitize(departement?.trim()|| '', { ALLOWED_TAGS: [] });
+
+    // ✅ Validation format — lettres seulement
+    const nameRegex = /^[a-zA-ZÀ-ÿ\s'\-]{2,50}$/;
+    if (cleanNom    && !nameRegex.test(cleanNom))    return res.status(400).json({ success: false, message: 'Nom invalide (lettres uniquement)' });
+    if (cleanPrenom && !nameRegex.test(cleanPrenom)) return res.status(400).json({ success: false, message: 'Prénom invalide (lettres uniquement)' });
+
     const user = await User.findByIdAndUpdate(
       req.user.id,
-      { nom, prenom, departement },
+      { nom: cleanNom, prenom: cleanPrenom, departement: cleanDept },
       { new: true, runValidators: true }
     ).exec();
+
     res.json({ success: true, data: user });
   } catch (err) {
     res.status(400).json({ success: false, message: err.message });
   }
 };
-
 // ─────────────────────────────────────────────────────────────────────────
 // CHANGE PASSWORD
 // ─────────────────────────────────────────────────────────────────────────
